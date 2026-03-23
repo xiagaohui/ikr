@@ -21,6 +21,11 @@ import './workers/index.js'
 
 const app = Fastify({ logger: true })
 
+// 注册 text/xml 内容类型解析器（微信消息使用 XML 格式）
+app.addContentTypeParser('text/xml', { parseAs: 'string' }, (req, body, done) => {
+  done(null, body)
+})
+
 // 插件
 await app.register(cors, { origin: true })
 await app.register(jwt, { secret: process.env.JWT_SECRET || 'dev-secret-change-in-prod' })
