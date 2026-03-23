@@ -85,13 +85,17 @@ export async function wechatRoutes(app: FastifyInstance) {
           } as SessionState
         }
 
-        // 同步调用 AI（需在 5 秒内完成）
-        const result = await agentRuntime.chat({
+        // 同步调用 AI，4 秒超时（微信要求 5 秒内响应）
+        const chatPromise = agentRuntime.chat({
           userId: user.id,
           query,
           session,
           channel: 'wechat_service_account'
         })
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('TIMEOUT')), 4000)
+        )
+        const result = await Promise.race([chatPromise, timeoutPromise])
 
         // 更新会话
         result.updatedSession.history.push(
@@ -113,10 +117,13 @@ export async function wechatRoutes(app: FastifyInstance) {
         return reply.type('text/xml').send(
           buildTextReply(openid, WECHAT_APP_ID, replyText)
         )
-      } catch (err) {
-        console.error('[wechat] chat error:', err)
+      } catch (err: any) {
+        console.error('[wechat] chat error:', err?.message || err)
+        const msg = err?.message === 'TIMEOUT'
+          ? '思考中，请再发一遍问题重试，或访问网页版获得更好体验。'
+          : '处理出错，请稍后重试。'
         return reply.type('text/xml').send(
-          buildTextReply(openid, WECHAT_APP_ID, '处理超时，请稍后重试。复杂问题建议访问网页版。')
+          buildTextReply(openid, WECHAT_APP_ID, msg)
         )
       }
     }

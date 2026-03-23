@@ -10,6 +10,6 @@ export const client = new OpenAI({
 })
 
 export const MODELS = {
-  main: 'glm-z1-flash',  // 当前可用模型（充值后换 glm-5 或 glm-4-plus）
-  fast: 'glm-4-flash',   // 轻量任务（分类、画像）
+  main: 'glm-4-flash',  // 微信场景需要快速响应，用 flash 保证 5 秒内回复
+  fast: 'glm-4-flash',
 } as const
