@@ -72,26 +72,18 @@ export async function wechatRoutes(app: FastifyInstance) {
       // 用户直接粘贴了 URL（文字形式）
       if (/^https?:\/\//i.test(query)) {
         const user = await userService.findOrCreateByServiceOpenid(openid)
-        if (query.includes('mp.weixin.qq.com')) {
-          // 公众号链接无法直接抓取
-          return reply.type('text/xml').send(
-            buildTextReply(openid, WECHAT_ORIGINAL_ID,
-              '公众号文章暂不支持直接收录。\n\n' +
-              '请在文章页面点右上角「...」→「发送给朋友」→ 选择本公众号，以卡片形式转发即可自动收录。'
-            )
-          )
-        }
-        // 普通链接，走收录流程
+        // 所有链接统一走收录流程（公众号用 AI 抓摘要，其他网站抓全文）
         await digestQueue.add('digest', {
           userId: user.id,
           url: query,
-          title: query,
-          description: '',
+          title: '待解析',
+          description: '',  // Worker 会自动抓取内容
           openid
         })
         return reply.type('text/xml').send(
           buildTextReply(openid, WECHAT_ORIGINAL_ID,
-            `✅ 已收录链接，正在抓取和消化，约30秒后完成，之后可以直接提问。`
+            `✅ 收到链接，正在抓取内容并消化，约30秒后完成，之后可以直接提问。\n\n` +
+            `（公众号文章如抓取失败，可复制文章正文后直接发给我）`
           )
         )
       }

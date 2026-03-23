@@ -5,6 +5,7 @@ import { db, knowledgeItems, knowledgeCards } from '@ikr/db'
 import { classifyContent, digestContent, embedBatch } from '@ikr/ai'
 import { sendCustomerServiceMessage } from '../channels/wechat.js'
 import { userService } from '../services/user.service.js'
+import { fetchUrlContent } from '../services/fetch-content.service.js'
 
 export const digestWorker = new Worker('content-digest', async (job) => {
   const { userId, url, title, description, openid } = job.data
@@ -12,15 +13,27 @@ export const digestWorker = new Worker('content-digest', async (job) => {
   console.log(`[digest] Starting for user=${userId} url=${url}`)
 
   // ─── 1. 获取内容 ───────────────────────────────────────
-  // Phase 0：使用 description 字段（文章摘要）
-  // Phase 1：小程序 WebView 提取正文后传入
-  const content = description || title || ''
+  let content = description || ''
+  let finalTitle = title || ''
+
+  // description 为空时，尝试自动抓取 URL 内容
+  if ((!content || content.length < 50) && url && url.startsWith('http')) {
+    try {
+      console.log(`[digest] Fetching content from URL: ${url}`)
+      const fetched = await fetchUrlContent(url)
+      content = fetched.content
+      if (!finalTitle || finalTitle === '待解析') finalTitle = fetched.title
+      console.log(`[digest] Fetched: ${finalTitle} (${content.length} chars)`)
+    } catch (err: any) {
+      console.warn(`[digest] Fetch failed: ${err.message}`)
+      content = description || ''
+    }
+  }
 
   if (!content || content.length < 50) {
     console.warn(`[digest] Content too short, skipping: ${url}`)
     await sendCustomerServiceMessage(openid,
-      `《${title}》内容较短，无法深度消化。\n` +
-      `建议在小程序中打开原文后重新收录，可获得完整分析。`
+      `无法获取文章内容。\n\n请复制文章正文后直接发给我，我来帮你消化。`
     )
     return
   }
@@ -29,7 +42,7 @@ export const digestWorker = new Worker('content-digest', async (job) => {
   const [item] = await db.insert(knowledgeItems).values({
     userId,
     url,
-    title,
+    title: finalTitle,
     source: 'wechat_mp',
     rawContent: content,
     status: 'processing'
@@ -94,7 +107,7 @@ export const digestWorker = new Worker('content-digest', async (job) => {
       ? '\n⚠️ 含时效性数据，使用时注意时间' : ''
 
     await sendCustomerServiceMessage(openid,
-      `📚《${title}》消化完毕\n\n` +
+      `📚《${finalTitle}》消化完毕\n\n` +
       `提炼了 ${cardCount} 个知识点：\n${pointsText}\n` +
       `${timelyWarning}\n\n` +
       `遇到相关问题，直接问我就好。`
@@ -109,7 +122,7 @@ export const digestWorker = new Worker('content-digest', async (job) => {
       .where(eq(knowledgeItems.id, item.id))
 
     await sendCustomerServiceMessage(openid,
-      `《${title}》消化时出现问题，请稍后重试。`
+      `《${finalTitle}》消化时出现问题，请稍后重试。`
     )
 
     throw err  // BullMQ 会自动重试
