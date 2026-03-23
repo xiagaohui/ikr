@@ -9,6 +9,7 @@ import fastifyStatic from '@fastify/static'
 import { fileURLToPath } from 'url'
 import { join, dirname } from 'path'
 import { setupAuth } from './lib/auth.js'
+import { initDatabase } from './lib/db-init.js'
 import { wechatRoutes } from './routes/wechat.js'
 import { itemsRoutes } from './routes/items.js'
 import { conversationsRoutes } from './routes/conversations.js'
@@ -21,6 +22,9 @@ const app = Fastify({ logger: true })
 await app.register(cors, { origin: true })
 await app.register(jwt, { secret: process.env.JWT_SECRET || 'dev-secret-change-in-prod' })
 await app.register(sensible)
+
+// 初始化数据库（生产环境自动建表）
+await initDatabase()
 
 // 静态文件（Web 界面）
 const __dirname = dirname(fileURLToPath(import.meta.url))
