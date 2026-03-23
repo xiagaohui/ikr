@@ -114,9 +114,9 @@ export async function wechatRoutes(app: FastifyInstance) {
           replyText = replyText.slice(0, 600) + '\n\n...(内容较长，建议访问网页版查看完整回答)'
         }
 
-        return reply.type('text/xml').send(
-          buildTextReply(openid, WECHAT_APP_ID, replyText)
-        )
+        const xmlReply = buildTextReply(openid, WECHAT_APP_ID, replyText)
+        console.log('[wechat] reply xml:', xmlReply.slice(0, 200))
+        return reply.type('text/xml').send(xmlReply)
       } catch (err: any) {
         console.error('[wechat] chat error:', err?.message || err)
         const msg = err?.message === 'TIMEOUT'
