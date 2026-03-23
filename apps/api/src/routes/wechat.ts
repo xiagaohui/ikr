@@ -9,7 +9,8 @@ import { getSession, setSession } from '../lib/redis.js'
 import { db, conversations } from '@ikr/db'
 import type { SessionState } from '@ikr/shared'
 
-const WECHAT_APP_ID = process.env.WECHAT_APP_ID || ''
+// 微信回复时 FromUserName 用原始ID（gh_xxx），不是 AppID（wx_xxx）
+const WECHAT_ORIGINAL_ID = process.env.WECHAT_ORIGINAL_ID || process.env.WECHAT_APP_ID || ''
 
 export async function wechatRoutes(app: FastifyInstance) {
 
@@ -38,7 +39,7 @@ export async function wechatRoutes(app: FastifyInstance) {
     if (message.msgType === 'event' && message.event === 'subscribe') {
       await userService.findOrCreateByServiceOpenid(openid)
       return reply.type('text/xml').send(
-        buildTextReply(openid, WECHAT_APP_ID,
+        buildTextReply(openid, WECHAT_ORIGINAL_ID,
           '欢迎使用 IKR 智慧知识库！\n\n' +
           '📚 转发文章给我，我帮你自动消化提炼\n' +
           '💡 遇到问题直接问我，我基于你的知识库给出可实操的建议\n\n' +
@@ -58,7 +59,7 @@ export async function wechatRoutes(app: FastifyInstance) {
         openid
       })
       return reply.type('text/xml').send(
-        buildTextReply(openid, WECHAT_APP_ID,
+        buildTextReply(openid, WECHAT_ORIGINAL_ID,
           `✅ 已收录《${message.title || '文章'}》\n正在消化，约30秒后完成，之后可以直接提问。`
         )
       )
@@ -114,7 +115,7 @@ export async function wechatRoutes(app: FastifyInstance) {
           replyText = replyText.slice(0, 600) + '\n\n...(内容较长，建议访问网页版查看完整回答)'
         }
 
-        const xmlReply = buildTextReply(openid, WECHAT_APP_ID, replyText)
+        const xmlReply = buildTextReply(openid, WECHAT_ORIGINAL_ID, replyText)
         console.log('[wechat] reply xml:', xmlReply.slice(0, 200))
         return reply.type('text/xml').send(xmlReply)
       } catch (err: any) {
@@ -123,7 +124,7 @@ export async function wechatRoutes(app: FastifyInstance) {
           ? '思考中，请再发一遍问题重试，或访问网页版获得更好体验。'
           : '处理出错，请稍后重试。'
         return reply.type('text/xml').send(
-          buildTextReply(openid, WECHAT_APP_ID, msg)
+          buildTextReply(openid, WECHAT_ORIGINAL_ID, msg)
         )
       }
     }
