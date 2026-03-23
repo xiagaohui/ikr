@@ -1,0 +1,5 @@
+export { client, MODELS } from './client.js'
+export { classifyContent } from './classify.js'
+export { digestContent } from './digest.js'
+export type { DigestResult } from './digest.js'
+export { embed, embedBatch, EMBEDDING_DIMENSIONS } from './embed.js'

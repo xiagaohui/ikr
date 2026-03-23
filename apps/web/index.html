@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IKR — 智慧知识库</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, 'PingFang SC', sans-serif;
+      background: #f5f5f5;
+      color: #1a1a1a;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── 顶部导航 ── */
+    .nav {
+      background: #fff;
+      border-bottom: 1px solid #eee;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      flex-shrink: 0;
+    }
+    .nav-logo { font-size: 20px; font-weight: 700; letter-spacing: 2px; }
+    .nav-tabs { display: flex; gap: 4px; }
+    .nav-tab {
+      padding: 6px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      color: #666;
+      border: none;
+      background: none;
+    }
+    .nav-tab.active { background: #1a1a1a; color: #fff; }
+    .nav-status { font-size: 12px; color: #999; }
+    .nav-status.ok { color: #4caf50; }
+
+    /* ── 主体布局 ── */
+    .main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ── 左侧：收录 ── */
+    .panel {
+      width: 360px;
+      flex-shrink: 0;
+      background: #fff;
+      border-right: 1px solid #eee;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .panel-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 14px;
+      font-weight: 600;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* 收录表单 */
+    .ingest-form { padding: 16px 20px; border-bottom: 1px solid #f0f0f0; }
+    .ingest-form input,
+    .ingest-form textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      margin-bottom: 8px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .ingest-form input:focus,
+    .ingest-form textarea:focus { border-color: #1a1a1a; }
+    .ingest-form textarea { height: 100px; resize: none; line-height: 1.6; }
+    .btn {
+      width: 100%;
+      padding: 10px;
+      background: #1a1a1a;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #1a1a1a;
+      margin-top: 6px;
+    }
+    .ingest-mode-btn {
+      flex: 1;
+      padding: 7px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      background: #fff;
+      font-size: 13px;
+      cursor: pointer;
+      color: #666;
+      transition: all 0.15s;
+    }
+    .ingest-mode-btn.active {
+      background: #1a1a1a;
+      color: #fff;
+      border-color: #1a1a1a;
+    }
+
+    /* 知识库列表 */
+    .library-list { flex: 1; overflow-y: auto; padding: 12px; }
+    .library-empty {
+      text-align: center;
+      padding: 40px 20px;
+      color: #bbb;
+      font-size: 14px;
+      line-height: 2;
+    }
+    .library-item {
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      border: 1px solid #f0f0f0;
+      transition: all 0.15s;
+    }
+    .library-item:hover { border-color: #ddd; background: #fafafa; }
+    .library-item.active { border-color: #1a1a1a; background: #f8f8f8; }
+    .item-title {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .item-meta { display: flex; gap: 8px; align-items: center; }
+    .tag {
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    .tag-argument  { background: #fff3e0; color: #e65100; }
+    .tag-operation { background: #e8f5e9; color: #2e7d32; }
+    .tag-fact      { background: #e3f2fd; color: #1565c0; }
+    .tag-narrative { background: #f3e5f5; color: #6a1b9a; }
+    .tag-processing { background: #f5f5f5; color: #999; }
+    .item-time { font-size: 11px; color: #bbb; }
+    .item-points { margin-top: 6px; }
+    .item-point {
+      font-size: 12px;
+      color: #666;
+      line-height: 1.5;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ── 右侧：对话 ── */
+    .chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* 模式栏 */
+    .mode-bar {
+      padding: 8px 20px;
+      background: #f8f8f8;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+      color: #666;
+      flex-shrink: 0;
+    }
+    .mode-bar.deep { background: #e8f5e9; color: #2e7d32; }
+    .mode-exit {
+      font-size: 12px;
+      color: #999;
+      cursor: pointer;
+      padding: 2px 8px;
+      background: rgba(0,0,0,0.06);
+      border-radius: 12px;
+      border: none;
+    }
+
+    /* 对话消息 */
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .message { display: flex; }
+    .message.user { justify-content: flex-end; }
+    .message.assistant { justify-content: flex-start; }
+
+    .bubble {
+      max-width: 72%;
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .user .bubble {
+      background: #1a1a1a;
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .assistant .bubble {
+      background: #fff;
+      color: #1a1a1a;
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    /* 深度思考入口 */
+    .deep-entry {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #f0f0f0;
+    }
+    .deep-btn {
+      font-size: 12px;
+      color: #2e7d32;
+      background: #e8f5e9;
+      padding: 4px 10px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+    }
+
+    /* loading 动画 */
+    .loading { display: flex; gap: 4px; align-items: center; padding: 4px 0; }
+    .dot {
+      width: 6px; height: 6px;
+      background: #ccc; border-radius: 50%;
+      animation: pulse 1.2s infinite ease-in-out;
+    }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes pulse {
+      0%,80%,100% { transform: scale(0.8); opacity: 0.4; }
+      40% { transform: scale(1.1); opacity: 1; }
+    }
+
+    /* 输入区 */
+    .input-area {
+      padding: 16px 20px;
+      background: #fff;
+      border-top: 1px solid #eee;
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      flex-shrink: 0;
+    }
+    .input-area textarea {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid #e0e0e0;
+      border-radius: 12px;
+      font-size: 14px;
+      font-family: inherit;
+      resize: none;
+      outline: none;
+      line-height: 1.5;
+      max-height: 120px;
+      transition: border-color 0.2s;
+    }
+    .input-area textarea:focus { border-color: #1a1a1a; }
+    .send-btn {
+      width: 40px; height: 40px;
+      background: #e0e0e0;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+    .send-btn.active { background: #1a1a1a; color: #fff; }
+
+    /* 欢迎界面 */
+    .welcome {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      color: #bbb;
+    }
+    .welcome-icon { font-size: 48px; }
+    .welcome-title { font-size: 18px; font-weight: 600; color: #666; }
+    .welcome-desc { font-size: 14px; line-height: 1.8; text-align: center; max-width: 300px; }
+
+    /* 状态提示 */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1a1a1a;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 13px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 999;
+    }
+    .toast.show { opacity: 1; }
+
+    /* 知识库详情 overlay */
+    .detail-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 100;
+      align-items: flex-end;
+    }
+    .detail-overlay.show { display: flex; }
+    .detail-panel {
+      background: #fff;
+      width: 100%;
+      max-height: 70vh;
+      border-radius: 16px 16px 0 0;
+      overflow-y: auto;
+      padding: 24px;
+    }
+    .detail-panel h3 { font-size: 16px; margin-bottom: 12px; }
+    .detail-section { margin-bottom: 16px; }
+    .detail-section-title { font-size: 12px; color: #999; text-transform: uppercase; margin-bottom: 8px; }
+    .card-item {
+      background: #f8f8f8;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+<!-- 顶部导航 -->
+<nav class="nav">
+  <div class="nav-logo">IKR</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('chat')">对话</button>
+    <button class="nav-tab" onclick="switchTab('ingest')">收录</button>
+  </div>
+  <div class="nav-status" id="statusDot">连接中...</div>
+</nav>
+
+<!-- 主体 -->
+<div class="main">
+
+  <!-- 左侧面板 -->
+  <div class="panel" id="panel">
+    <div class="panel-header">知识库 <span id="cardCount" style="color:#bbb;font-weight:400"></span></div>
+
+    <!-- 收录表单（默认隐藏） -->
+    <div class="ingest-form" id="ingestForm" style="display:none">
+      <!-- 输入方式切换 -->
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <button class="ingest-mode-btn active" id="modeUrlBtn" onclick="setIngestMode('url')">粘贴链接</button>
+        <button class="ingest-mode-btn" id="modeTextBtn" onclick="setIngestMode('text')">粘贴文本</button>
+      </div>
+
+      <!-- URL 模式 -->
+      <div id="urlMode">
+        <input type="url" id="ingestUrl" placeholder="粘贴文章链接（支持知乎、少数派、博客、公众号等）" />
+        <div id="urlHint" style="font-size:12px;color:#999;margin:-4px 0 8px;line-height:1.5"></div>
+        <button class="btn" id="ingestUrlBtn" onclick="ingestByUrl()">抓取并收录</button>
+      </div>
+
+      <!-- 文本模式 -->
+      <div id="textMode" style="display:none">
+        <input type="text" id="ingestTitle" placeholder="文章标题" />
+        <textarea id="ingestContent" placeholder="粘贴文章正文内容..."></textarea>
+        <button class="btn" id="ingestBtn" onclick="ingestArticle()">收录并消化</button>
+      </div>
+
+      <button class="btn btn-secondary" style="margin-top:6px" onclick="switchTab('chat')">取消</button>
+    </div>
+
+    <!-- 知识库列表 -->
+    <div class="library-list" id="libraryList">
+      <div class="library-empty">
+        知识库还是空的<br>
+        点击「收录」添加文章
+      </div>
+    </div>
+  </div>
+
+  <!-- 右侧对话区 -->
+  <div class="chat-area">
+    <div class="mode-bar" id="modeBar">
+      <span id="modeLabel">💡 决策模式</span>
+    </div>
+
+    <!-- 消息列表 -->
+    <div class="messages" id="messages">
+      <div class="welcome">
+        <div class="welcome-icon">🧠</div>
+        <div class="welcome-title">你好，我是 IKR</div>
+        <div class="welcome-desc">
+          先在左侧收录一些文章，<br>
+          然后遇到问题直接问我，<br>
+          我会基于你的知识库给出建议。
+        </div>
+      </div>
+    </div>
+
+    <!-- 输入框 -->
+    <div class="input-area">
+      <textarea
+        id="queryInput"
+        placeholder="描述你遇到的问题..."
+        rows="1"
+        onkeydown="handleKey(event)"
+        oninput="autoResize(this)"
+      ></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">↑</button>
+    </div>
+  </div>
+</div>
+
+<!-- 知识库详情 -->
+<div class="detail-overlay" id="detailOverlay" onclick="closeDetail(event)">
+  <div class="detail-panel" id="detailPanel"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'http://localhost:3000'
+let userId = localStorage.getItem('ikr_userId')
+let token  = localStorage.getItem('ikr_token')
+let conversationId = null
+let mode = 'decision'
+let items = []
+
+// ── 初始化 ──────────────────────────────────────────────
+async function init() {
+  // 健康检查
+  try {
+    await fetch(`${API}/health`)
+    document.getElementById('statusDot').textContent = '● 已连接'
+    document.getElementById('statusDot').className = 'nav-status ok'
+  } catch {
+    document.getElementById('statusDot').textContent = '● 未连接'
+    showToast('无法连接到 API，请确认服务已启动')
+    return
+  }
+
+  // 登录
+  if (!userId || !token) {
+    const res = await fetch(`${API}/dev/user`, { method: 'POST' })
+    const data = await res.json()
+    userId = data.userId
+    token  = data.token
+    localStorage.setItem('ikr_userId', userId)
+    localStorage.setItem('ikr_token', token)
+  }
+
+  loadLibrary()
+  // 每 5 秒刷新知识库（等待消化完成）
+  setInterval(loadLibrary, 5000)
+}
+
+// ── 知识库 ───────────────────────────────────────────────
+async function loadLibrary() {
+  try {
+    const res = await fetch(`${API}/dev/library/${userId}`)
+    const data = await res.json()
+    items = data.items || []
+    renderLibrary()
+    const count = data.cardCount || 0
+    document.getElementById('cardCount').textContent = count > 0 ? `· ${count} 个知识点` : ''
+  } catch {}
+}
+
+function renderLibrary() {
+  const el = document.getElementById('libraryList')
+  if (!items.length) {
+    el.innerHTML = '<div class="library-empty">知识库还是空的<br>点击「收录」添加文章</div>'
+    return
+  }
+
+  const typeMap = { argument:'观点', operation:'方法', fact:'数据', narrative:'案例' }
+
+  el.innerHTML = items.map(item => `
+    <div class="library-item ${item.status === 'done' ? '' : 'processing'}"
+         onclick="showDetail('${item.id}')">
+      <div class="item-title">${item.title || '无标题'}</div>
+      <div class="item-meta">
+        <span class="tag ${item.status === 'done' ? 'tag-' + item.type : 'tag-processing'}">
+          ${item.status === 'done' ? (typeMap[item.type] || item.type) : '消化中...'}
+        </span>
+        <span class="item-time">${timeAgo(item.createdAt)}</span>
+      </div>
+      ${item.points?.length ? `
+        <div class="item-points">
+          ${item.points.slice(0,2).map(p => `<div class="item-point">· ${p}</div>`).join('')}
+        </div>` : ''}
+    </div>
+  `).join('')
+}
+
+// ── 收录模式切换 ─────────────────────────────────────────
+function setIngestMode(mode) {
+  const isUrl = mode === 'url'
+  document.getElementById('urlMode').style.display = isUrl ? 'block' : 'none'
+  document.getElementById('textMode').style.display = isUrl ? 'none' : 'block'
+  document.getElementById('modeUrlBtn').className = 'ingest-mode-btn' + (isUrl ? ' active' : '')
+  document.getElementById('modeTextBtn').className = 'ingest-mode-btn' + (!isUrl ? ' active' : '')
+  document.getElementById('urlHint').textContent = ''
+  if (isUrl) document.getElementById('ingestUrl').focus()
+  else document.getElementById('ingestTitle').focus()
+}
+
+// URL 输入时实时提示
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('ingestUrl')?.addEventListener('input', (e) => {
+    const url = e.target.value.trim()
+    const hint = document.getElementById('urlHint')
+    if (!url) { hint.textContent = ''; return }
+    if (url.includes('mp.weixin.qq.com')) {
+      hint.textContent = '📱 公众号文章 — 将用浏览器自动读取（需约10秒）'
+      hint.style.color = '#1565c0'
+    } else {
+      hint.textContent = '🌐 普通网页 — 直接抓取'
+      hint.style.color = '#2e7d32'
+    }
+  })
+})
+
+// ── 通过 URL 收录 ─────────────────────────────────────────
+async function ingestByUrl() {
+  const url = document.getElementById('ingestUrl').value.trim()
+  if (!url) { showToast('请输入文章链接'); return }
+  try { new URL(url) } catch { showToast('链接格式不正确'); return }
+
+  const btn = document.getElementById('ingestUrlBtn')
+  btn.disabled = true
+  const isWechat = url.includes('mp.weixin.qq.com')
+  btn.textContent = isWechat ? '启动浏览器读取中（约10秒）...' : '抓取中...'
+
+  try {
+    const res = await fetch(`${API}/dev/ingest-url`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, url })
+    })
+    const data = await res.json()
+
+    if (!res.ok) {
+      showToast(data.message || data.error || '抓取失败')
+      return
+    }
+
+    document.getElementById('ingestUrl').value = ''
+    document.getElementById('urlHint').textContent = ''
+    showToast(`✅ 已收录《${data.title}》，正在消化...`)
+    switchTab('chat')
+    setTimeout(loadLibrary, 3000)
+  } catch {
+    showToast('网络错误，请重试')
+  } finally {
+    btn.disabled = false
+    btn.textContent = '抓取并收录'
+  }
+}
+
+// ── 收录文章文本 ──────────────────────────────────────────
+async function ingestArticle() {
+  const title   = document.getElementById('ingestTitle').value.trim()
+  const content = document.getElementById('ingestContent').value.trim()
+  if (!title || !content) { showToast('请填写标题和内容'); return }
+  if (content.length < 50) { showToast('内容太短，至少50字'); return }
+
+  const btn = document.getElementById('ingestBtn')
+  btn.disabled = true
+  btn.textContent = '收录中...'
+
+  try {
+    await fetch(`${API}/dev/ingest`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, title, content })
+    })
+    document.getElementById('ingestTitle').value = ''
+    document.getElementById('ingestContent').value = ''
+    showToast('✅ 已收录，正在消化（约30秒）')
+    switchTab('chat')
+    setTimeout(loadLibrary, 3000)
+  } catch {
+    showToast('收录失败，请重试')
+  } finally {
+    btn.disabled = false
+    btn.textContent = '收录并消化'
+  }
+}
+
+// ── 对话 ─────────────────────────────────────────────────
+async function sendMessage(text) {
+  const input = document.getElementById('queryInput')
+  const query = text || input.value.trim()
+  if (!query) return
+
+  input.value = ''
+  autoResize(input)
+  document.getElementById('sendBtn').className = 'send-btn'
+
+  // 移除欢迎界面
+  const welcome = document.querySelector('.welcome')
+  if (welcome) welcome.remove()
+
+  // 显示用户消息
+  appendMessage('user', query)
+
+  // 显示 loading
+  const loadingId = appendLoading()
+
+  try {
+    const body = { userId, query }
+    if (conversationId) body.conversationId = conversationId
+
+    const res = await fetch(`${API}/dev/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+    const data = await res.json()
+
+    removeLoading(loadingId)
+
+    if (data.error) {
+      appendMessage('assistant', '抱歉，处理出错了，请重试。')
+      return
+    }
+
+    conversationId = data.conversationId
+    mode = data.mode
+
+    // 更新模式栏
+    updateModeBar()
+
+    // 显示回答（带深度思考入口）
+    appendAnswer(data.answer)
+
+  } catch {
+    removeLoading(loadingId)
+    appendMessage('assistant', '连接失败，请检查服务是否运行。')
+  }
+}
+
+function appendMessage(role, text) {
+  const el = document.createElement('div')
+  el.className = `message ${role}`
+  el.innerHTML = `<div class="bubble">${escapeHtml(text)}</div>`
+  document.getElementById('messages').appendChild(el)
+  scrollToBottom()
+  return el
+}
+
+function appendAnswer(text) {
+  const el = document.createElement('div')
+  el.className = 'message assistant'
+
+  const isDecision = mode === 'decision'
+  el.innerHTML = `
+    <div class="bubble">
+      ${escapeHtml(text)}
+      ${isDecision ? `
+        <div class="deep-entry">
+          <button class="deep-btn" onclick="switchToDeep()">💡 深入理解这个问题</button>
+        </div>` : ''}
+    </div>`
+  document.getElementById('messages').appendChild(el)
+  scrollToBottom()
+}
+
+function appendLoading() {
+  const id = 'loading-' + Date.now()
+  const el = document.createElement('div')
+  el.className = 'message assistant'
+  el.id = id
+  el.innerHTML = `<div class="bubble"><div class="loading">
+    <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+  </div></div>`
+  document.getElementById('messages').appendChild(el)
+  scrollToBottom()
+  return id
+}
+
+function removeLoading(id) {
+  document.getElementById(id)?.remove()
+}
+
+function switchToDeep() {
+  sendMessage('深入')
+}
+
+function exitDeep() {
+  sendMessage('退出')
+}
+
+function updateModeBar() {
+  const bar = document.getElementById('modeBar')
+  const label = document.getElementById('modeLabel')
+  if (mode === 'deep_thinking') {
+    bar.className = 'mode-bar deep'
+    bar.innerHTML = `
+      <span>🧠 深度思考模式</span>
+      <button class="mode-exit" onclick="exitDeep()">退出</button>`
+  } else {
+    bar.className = 'mode-bar'
+    bar.innerHTML = `<span id="modeLabel">💡 决策模式</span>`
+  }
+}
+
+// ── 知识库详情 ───────────────────────────────────────────
+async function showDetail(itemId) {
+  const item = items.find(i => i.id === itemId)
+  if (!item || item.status !== 'done') return
+
+  const res = await fetch(`${API}/api/items/${itemId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+  const data = await res.json()
+
+  const typeMap = { argument:'观点型', operation:'操作型', fact:'事实型', narrative:'叙事型' }
+  const panel = document.getElementById('detailPanel')
+
+  panel.innerHTML = `
+    <h3>${data.item?.title || '无标题'}</h3>
+    ${data.item?.summary?.points?.length ? `
+      <div class="detail-section">
+        <div class="detail-section-title">核心要点</div>
+        ${data.item.summary.points.map(p => `<div class="card-item">· ${p}</div>`).join('')}
+      </div>` : ''}
+    ${data.item?.summary?.logic ? `
+      <div class="detail-section">
+        <div class="detail-section-title">逻辑链</div>
+        <div class="card-item">${data.item.summary.logic}</div>
+      </div>` : ''}
+    ${data.cards?.length ? `
+      <div class="detail-section">
+        <div class="detail-section-title">知识卡片（${data.cards.length}张）</div>
+        ${data.cards.map(c => `
+          <div class="card-item">
+            <span class="tag tag-${c.cardType}" style="margin-right:6px">
+              ${typeMap[c.cardType] || c.cardType}
+            </span>
+            ${c.content}
+          </div>`).join('')}
+      </div>` : ''}
+    <button class="btn" style="margin-top:8px" onclick="askAbout('${data.item?.title}')">
+      基于这篇文章提问
+    </button>
+  `
+
+  document.getElementById('detailOverlay').classList.add('show')
+}
+
+function closeDetail(e) {
+  if (e.target === document.getElementById('detailOverlay')) {
+    document.getElementById('detailOverlay').classList.remove('show')
+  }
+}
+
+function askAbout(title) {
+  document.getElementById('detailOverlay').classList.remove('show')
+  document.getElementById('queryInput').value = `关于《${title}》，`
+  document.getElementById('queryInput').focus()
+  switchTab('chat')
+}
+
+// ── 工具函数 ─────────────────────────────────────────────
+function switchTab(tab) {
+  const ingestForm = document.getElementById('ingestForm')
+  const tabs = document.querySelectorAll('.nav-tab')
+  if (tab === 'ingest') {
+    ingestForm.style.display = 'block'
+    tabs[0].classList.remove('active')
+    tabs[1].classList.add('active')
+    document.getElementById('ingestTitle').focus()
+  } else {
+    ingestForm.style.display = 'none'
+    tabs[0].classList.add('active')
+    tabs[1].classList.remove('active')
+    document.getElementById('queryInput').focus()
+  }
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault()
+    sendMessage()
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto'
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px'
+  const sendBtn = document.getElementById('sendBtn')
+  sendBtn.className = el.value.trim() ? 'send-btn active' : 'send-btn'
+}
+
+function scrollToBottom() {
+  const el = document.getElementById('messages')
+  el.scrollTop = el.scrollHeight
+}
+
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\n/g, '<br>')
+}
+
+function timeAgo(dateStr) {
+  if (!dateStr) return ''
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const h = Math.floor(diff / 3600000)
+  if (h < 1) return '刚刚'
+  if (h < 24) return `${h}小时前`
+  return `${Math.floor(h/24)}天前`
+}
+
+function showToast(msg) {
+  const el = document.getElementById('toast')
+  el.textContent = msg
+  el.classList.add('show')
+  setTimeout(() => el.classList.remove('show'), 3000)
+}
+
+// 启动
+init()
+</script>
+</body>
+</html>

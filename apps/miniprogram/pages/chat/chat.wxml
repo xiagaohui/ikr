@@ -1,0 +1,84 @@
+<view class="chat-page">
+
+  <!-- 顶部模式指示 -->
+  <view class="mode-bar {{mode === 'deep_thinking' ? 'deep' : ''}}">
+    <text wx:if="{{mode === 'decision'}}">💡 决策模式</text>
+    <text wx:if="{{mode === 'deep_thinking'}}">🧠 深度思考模式</text>
+    <text
+      class="mode-exit"
+      wx:if="{{mode === 'deep_thinking'}}"
+      bindtap="onExitDeepThinking"
+    >退出</text>
+  </view>
+
+  <!-- 消息列表 -->
+  <scroll-view
+    class="message-list"
+    scroll-y
+    scroll-into-view="{{scrollToId}}"
+    scroll-with-animation
+    enhanced
+    bounces
+  >
+    <view class="message-padding-top" />
+
+    <view
+      wx:for="{{messages}}"
+      wx:key="index"
+      id="msg-{{index}}"
+      class="message-wrapper {{item.role}}"
+    >
+      <!-- 用户消息 -->
+      <view wx:if="{{item.role === 'user'}}" class="bubble user-bubble">
+        <text class="bubble-text">{{item.content}}</text>
+      </view>
+
+      <!-- AI 消息 -->
+      <view wx:if="{{item.role === 'assistant'}}" class="bubble assistant-bubble">
+        <!-- loading 状态 -->
+        <view wx:if="{{item.content === '...'}}" class="loading-dots">
+          <view class="dot" />
+          <view class="dot" />
+          <view class="dot" />
+        </view>
+        <!-- 正常内容 -->
+        <text wx:else class="bubble-text assistant-text">{{item.content}}</text>
+
+        <!-- 深度思考入口（决策模式下的 AI 回复末尾） -->
+        <view
+          class="deep-thinking-entry"
+          wx:if="{{mode === 'decision' && item.content !== '...' && index === messages.length - 1}}"
+          bindtap="onSwitchToDeepThinking"
+        >
+          <text class="deep-thinking-text">💡 深入理解这个问题</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="message-padding-bottom" />
+  </scroll-view>
+
+  <!-- 输入区域 -->
+  <view class="input-area">
+    <view class="input-row">
+      <textarea
+        class="message-input"
+        placeholder="{{mode === 'deep_thinking' ? '回答 IKR 的问题...' : '继续追问...'}}"
+        placeholder-class="input-placeholder"
+        value="{{inputText}}"
+        bindinput="onInputChange"
+        bindkeyboardheightchange="onKeyboardHeightChange"
+        maxlength="500"
+        auto-height
+        adjust-position
+      />
+      <view
+        class="send-icon {{inputText.length > 0 && !loading ? 'active' : ''}}"
+        bindtap="sendMessage"
+      >
+        <text class="send-arrow">↑</text>
+      </view>
+    </view>
+  </view>
+
+</view>

@@ -1,0 +1,24 @@
+{
+  "name": "@ikr/db",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "db:push": "drizzle-kit push",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio"
+  },
+  "peerDependencies": {
+    "drizzle-orm": "^0.30.0",
+    "postgres": "^3.4.0"
+  },
+  "devDependencies": {
+    "drizzle-orm": "^0.30.0",
+    "postgres": "^3.4.3",
+    "drizzle-kit": "^0.21.0",
+    "typescript": "^5.4.0"
+  }
+}

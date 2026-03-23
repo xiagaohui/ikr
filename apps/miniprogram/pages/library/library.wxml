@@ -1,0 +1,138 @@
+<view class="library-page">
+
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <view class="search-input-wrap">
+      <text class="search-icon">🔍</text>
+      <input
+        class="search-input"
+        placeholder="搜索知识库..."
+        placeholder-class="search-placeholder"
+        value="{{searchQuery}}"
+        bindinput="onSearchInput"
+      />
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{!loading && items.length === 0}}">
+    <text class="empty-icon">📚</text>
+    <text class="empty-title">知识库还是空的</text>
+    <text class="empty-desc">在微信里把文章转发给 IKR 服务号，\n开始积累你的知识库</text>
+  </view>
+
+  <!-- 加载中 -->
+  <view class="loading-state" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <!-- 知识条目列表 -->
+  <scroll-view scroll-y class="item-list" wx:if="{{!loading && items.length > 0}}">
+    <view
+      class="item-card"
+      wx:for="{{items}}"
+      wx:key="id"
+      bindtap="onItemTap"
+      data-id="{{item.id}}"
+    >
+      <!-- 状态指示 -->
+      <view class="item-status {{item.status}}">
+        <text wx:if="{{item.status === 'processing'}}">消化中...</text>
+        <text wx:if="{{item.status === 'done'}}">✓</text>
+        <text wx:if="{{item.status === 'failed'}}">✗</text>
+      </view>
+
+      <view class="item-content">
+        <view class="item-header">
+          <text class="item-title">{{item.title || '无标题'}}</text>
+          <text class="tag tag-{{item.primaryType}}">{{typeLabel(item.primaryType)}}</text>
+        </view>
+
+        <!-- 摘要要点 -->
+        <view class="item-points" wx:if="{{item.summary && item.summary.points.length > 0}}">
+          <text
+            class="point-text"
+            wx:for="{{item.summary.points}}"
+            wx:for-item="point"
+            wx:key="index"
+          >· {{point}}</text>
+        </view>
+
+        <view class="item-meta">
+          <text class="meta-time text-secondary">{{formatTime(item.createdAt)}}</text>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 详情面板（半屏弹出） -->
+  <view class="detail-mask" wx:if="{{showDetail}}" bindtap="onCloseDetail" />
+  <view class="detail-panel {{showDetail ? 'show' : ''}}">
+    <view wx:if="{{selectedItem}}">
+      <!-- 面板头部 -->
+      <view class="detail-header">
+        <view class="detail-drag-bar" />
+        <view class="detail-title-row">
+          <text class="detail-title">{{selectedItem.title}}</text>
+          <text class="tag tag-{{selectedItem.primaryType}}">
+            {{typeLabel(selectedItem.primaryType)}}
+          </text>
+        </view>
+        <text class="detail-date text-secondary">
+          {{formatTime(selectedItem.createdAt)}}
+        </text>
+      </view>
+
+      <scroll-view scroll-y class="detail-scroll">
+
+        <!-- 摘要 -->
+        <view class="detail-section" wx:if="{{selectedItem.summary}}">
+          <view class="detail-section-title">核心要点</view>
+          <view
+            class="point-item"
+            wx:for="{{selectedItem.summary.points}}"
+            wx:key="index"
+          >
+            <text class="point-bullet">·</text>
+            <text class="point-content">{{item}}</text>
+          </view>
+        </view>
+
+        <!-- 逻辑链 -->
+        <view
+          class="detail-section"
+          wx:if="{{selectedItem.summary && selectedItem.summary.logic}}"
+        >
+          <view class="detail-section-title">逻辑链</view>
+          <text class="logic-text">{{selectedItem.summary.logic}}</text>
+        </view>
+
+        <!-- 知识卡片 -->
+        <view class="detail-section" wx:if="{{selectedCards.length > 0}}">
+          <view class="detail-section-title">知识卡片（{{selectedCards.length}}张）</view>
+          <view
+            class="knowledge-card"
+            wx:for="{{selectedCards}}"
+            wx:key="id"
+          >
+            <view class="card-header">
+              <text class="tag tag-{{item.cardType}}">{{typeLabel(item.cardType)}}</text>
+              <text class="timely-badge" wx:if="{{item.isTimely}}">⚠️ 时效</text>
+            </view>
+            <text class="card-content">{{item.content}}</text>
+          </view>
+        </view>
+
+        <view class="detail-padding" />
+      </scroll-view>
+
+      <!-- 底部操作 -->
+      <view class="detail-actions">
+        <button class="btn-primary ask-btn" bindtap="onAskAboutItem">
+          基于这篇文章提问
+        </button>
+      </view>
+    </view>
+  </view>
+
+</view>

@@ -1,0 +1,220 @@
+.library-page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f5f5f5;
+}
+
+/* 搜索栏 */
+.search-bar {
+  padding: 16rpx 24rpx;
+  background: #ffffff;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+.search-input-wrap {
+  display: flex;
+  align-items: center;
+  background: #f5f5f5;
+  border-radius: 20rpx;
+  padding: 12rpx 20rpx;
+  gap: 12rpx;
+}
+.search-icon  { font-size: 28rpx; }
+.search-input { flex: 1; font-size: 26rpx; background: transparent; }
+.search-placeholder { color: #bbbbbb; }
+
+/* 空状态 */
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+  padding: 64rpx;
+}
+.empty-icon  { font-size: 80rpx; }
+.empty-title { font-size: 32rpx; font-weight: 600; }
+.empty-desc  { font-size: 26rpx; color: #999; text-align: center; line-height: 1.6; }
+
+/* 加载状态 */
+.loading-state {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-size: 26rpx;
+}
+
+/* 条目列表 */
+.item-list { flex: 1; padding: 16rpx 24rpx; }
+
+.item-card {
+  background: #ffffff;
+  border-radius: 16rpx;
+  padding: 20rpx;
+  margin-bottom: 12rpx;
+  display: flex;
+  gap: 16rpx;
+  box-shadow: 0 1rpx 8rpx rgba(0,0,0,0.04);
+}
+
+/* 状态指示点 */
+.item-status {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  margin-top: 8rpx;
+  flex-shrink: 0;
+  font-size: 20rpx;
+}
+.item-status.processing { background: #ffb74d; }
+.item-status.done       { background: #4caf50; color: #fff; }
+.item-status.failed     { background: #ef5350; color: #fff; }
+
+.item-content { flex: 1; min-width: 0; }
+
+.item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8rpx;
+  margin-bottom: 8rpx;
+}
+.item-title {
+  font-size: 28rpx;
+  font-weight: 500;
+  flex: 1;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.item-points { margin-bottom: 8rpx; }
+.point-text  {
+  display: block;
+  font-size: 24rpx;
+  color: #666;
+  line-height: 1.6;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.item-meta  { margin-top: 4rpx; }
+.meta-time  { font-size: 22rpx; }
+
+/* 详情面板 */
+.detail-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 100;
+}
+.detail-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border-radius: 24rpx 24rpx 0 0;
+  z-index: 101;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+}
+.detail-panel.show { transform: translateY(0); }
+
+.detail-header {
+  padding: 16rpx 32rpx 20rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+.detail-drag-bar {
+  width: 60rpx;
+  height: 8rpx;
+  background: #e0e0e0;
+  border-radius: 4rpx;
+  margin: 0 auto 20rpx;
+}
+.detail-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12rpx;
+  margin-bottom: 8rpx;
+}
+.detail-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  flex: 1;
+  line-height: 1.4;
+}
+.detail-date { font-size: 22rpx; }
+
+.detail-scroll { flex: 1; overflow: hidden; }
+.detail-padding { height: 32rpx; }
+
+.detail-section { padding: 24rpx 32rpx 0; }
+.detail-section-title {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 1rpx;
+  margin-bottom: 12rpx;
+}
+
+.point-item {
+  display: flex;
+  gap: 8rpx;
+  margin-bottom: 10rpx;
+}
+.point-bullet { color: #999; flex-shrink: 0; }
+.point-content { font-size: 26rpx; line-height: 1.6; }
+
+.logic-text {
+  font-size: 26rpx;
+  line-height: 1.7;
+  color: #444;
+  background: #f8f8f8;
+  padding: 16rpx;
+  border-radius: 12rpx;
+}
+
+/* 知识卡片 */
+.knowledge-card {
+  background: #f8f8f8;
+  border-radius: 12rpx;
+  padding: 16rpx;
+  margin-bottom: 12rpx;
+}
+.card-header {
+  display: flex;
+  gap: 8rpx;
+  margin-bottom: 8rpx;
+  align-items: center;
+}
+.timely-badge { font-size: 20rpx; color: #e65100; }
+.card-content { font-size: 26rpx; line-height: 1.6; }
+
+/* 底部操作 */
+.detail-actions {
+  padding: 16rpx 32rpx;
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+  border-top: 1rpx solid #f0f0f0;
+}
+.ask-btn {
+  width: 100%;
+  background: #1a1a1a;
+  color: #ffffff;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  padding: 24rpx;
+  text-align: center;
+  border: none;
+}
+.ask-btn::after { border: none; }
