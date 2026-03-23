@@ -51,8 +51,10 @@ export function buildSystemPrompt(ctx: PromptContext): string {
 回答结束后附加："回复「退出」返回决策模式"`)
   }
 
-  // ─── [3] Skill 列表（延迟加载）────────────────────────
-  sections.push(skillsXml)
+  // ─── [3] Skill 列表（微信渠道跳过，节省 token）──────────
+  if (ctx.channel !== 'wechat_service_account') {
+    sections.push(skillsXml)
+  }
 
   // ─── [4] 用户画像 ──────────────────────────────────────
   if (ctx.userProfile && ctx.userProfile.length > 50) {

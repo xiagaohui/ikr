@@ -93,7 +93,7 @@ export async function wechatRoutes(app: FastifyInstance) {
           channel: 'wechat_service_account'
         })
         const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('TIMEOUT')), 4000)
+          setTimeout(() => reject(new Error('TIMEOUT')), 8000)
         )
         const result = await Promise.race([chatPromise, timeoutPromise])
 
