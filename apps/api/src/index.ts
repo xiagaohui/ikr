@@ -16,6 +16,9 @@ import { conversationsRoutes } from './routes/conversations.js'
 import { miniprogramRoutes } from './routes/miniprogram.js'
 import { devRoutes } from './routes/dev.js'
 
+// 在同一进程启动 Workers（Render 免费套餐只有一个服务）
+import './workers/index.js'
+
 const app = Fastify({ logger: true })
 
 // 插件
