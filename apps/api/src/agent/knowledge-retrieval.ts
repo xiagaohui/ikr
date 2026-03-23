@@ -41,10 +41,19 @@ export async function hybridSearch(
 ): Promise<RetrievedCard[]> {
   const { limit = 10, mode = 'decision', queryIntent = 'general' } = options
 
-  // 生成查询向量
-  const queryEmbedding = await embed(query)
-  // pgvector 需要 '[x,y,z,...]' 格式，而非 JSON 格式
-  const embeddingStr = `[${queryEmbedding.join(',')}]`
+  // 生成查询向量（失败时降级为纯 BM25 检索）
+  let embeddingStr: string | null = null
+  try {
+    const queryEmbedding = await embed(query)
+    embeddingStr = `[${queryEmbedding.join(',')}]`
+  } catch (err) {
+    console.warn('[retrieval] embedding failed, falling back to BM25 only:', (err as Error).message)
+  }
+
+  // 无向量时直接用 BM25 全文检索
+  if (!embeddingStr) {
+    return bm25Search(userId, query, limit)
+  }
 
   const typeWeights = mode === 'deep_thinking'
     ? DEEP_THINKING_WEIGHTS
@@ -149,4 +158,37 @@ export async function activateCards(cardIds: string[]): Promise<void> {
     SET last_activated_at = NOW()
     WHERE id = ANY(${uuidArray}::uuid[])
   `)
+}
+
+// BM25 纯文本检索（embedding 不可用时的降级方案）
+async function bm25Search(
+  userId: string,
+  query: string,
+  limit: number
+): Promise<RetrievedCard[]> {
+  const results = await db.execute(sql`
+    SELECT
+      kc.id, kc.content, kc.source_quote, kc.card_type,
+      kc.type_metadata, kc.is_timely, kc.data_published_at,
+      kc.retention_score, ki.title as item_title,
+      ts_rank(kc.search_vector, plainto_tsquery('simple', ${query})) as score
+    FROM knowledge_cards kc
+    LEFT JOIN knowledge_items ki ON kc.item_id = ki.id
+    WHERE kc.user_id = ${userId}::uuid
+      AND kc.search_vector @@ plainto_tsquery('simple', ${query})
+    ORDER BY score DESC
+    LIMIT ${limit}
+  `)
+
+  return (results as any[]).map(row => ({
+    id: row.id,
+    content: row.content,
+    sourceQuote: row.source_quote,
+    cardType: row.card_type,
+    typeMetadata: row.type_metadata,
+    isTimely: row.is_timely,
+    dataPublishedAt: row.data_published_at,
+    itemTitle: row.item_title,
+    score: Number(row.score)
+  }))
 }
